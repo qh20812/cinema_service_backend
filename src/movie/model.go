@@ -34,6 +34,7 @@ type Movie struct {
 	DurationMin    int           `json:"duration_min" bson:"duration_min"` // phút
 	Showtime       time.Time     `json:"showtime" bson:"showtime"`
 	TotalSeats     int           `json:"total_seats" bson:"total_seats"`
+	ImageUrl       string        `json:"image_url" bson:"image_url"`
 	AvailableSeats int           `json:"available_seats" bson:"available_seats"`
 	CreatedAt      time.Time     `json:"created_at,omitempty" bson:"created_at"`
 	UpdatedAt      time.Time     `json:"updated_at,omitempty" bson:"updated_at"`
@@ -44,6 +45,7 @@ func (m *Movie) PrepareForCreate() {
 		m.ID = bson.NewObjectID()
 	}
 	m.Title = strings.TrimSpace(m.Title)
+	m.ImageUrl = strings.TrimSpace(m.ImageUrl)
 	m.AgeRating = AgeRating(strings.TrimSpace(strings.ToUpper(string(m.AgeRating))))
 	if !ValidAgeRating(m.AgeRating) {
 		m.AgeRating = AgeRatingP
@@ -64,6 +66,7 @@ func (m *Movie) PrepareForCreate() {
 func (m *Movie) PrepareForUpdate() {
 	m.UpdatedAt = time.Now().UTC()
 	m.Title = strings.TrimSpace(m.Title)
+	m.ImageUrl = strings.TrimSpace(m.ImageUrl)
 	if m.AgeRating != "" {
 		m.AgeRating = AgeRating(strings.TrimSpace(strings.ToUpper(string(m.AgeRating))))
 		if !ValidAgeRating(m.AgeRating) {
@@ -108,6 +111,9 @@ func (m *Movie) ReleaseSeats(quantity int) {
 func (m *Movie) Validate() error {
 	if strings.TrimSpace(m.Title) == "" {
 		return errors.New("title is required")
+	}
+	if strings.TrimSpace(m.ImageUrl) == "" {
+		return errors.New("image_url is required")
 	}
 	if !ValidAgeRating(m.AgeRating) {
 		return errors.New("invalid age_rating")

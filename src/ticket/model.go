@@ -12,6 +12,7 @@ type Ticket struct {
 	UserID     bson.ObjectID `json:"user_id" bson:"user_id"`
 	MovieID    bson.ObjectID `json:"movie_id" bson:"movie_id"`
 	SeatNumber int           `json:"seat_number" bson:"seat_number"`
+	GuardianConfirmed bool   `json:"guardian_confirmed" bson:"guardian_confirmed"`
 	Quantity   int           `json:"quantity" bson:"quantity"`
 	AgeRating  string        `json:"age_rating" bson:"age_rating"` // snapshot độ tuổi phim khi mua
 	CreatedAt  time.Time     `json:"created_at,omitempty" bson:"created_at"`
@@ -43,6 +44,7 @@ func (t *Ticket) Validate() error {
 	if t.SeatNumber <= 0 {
 		return errors.New("seat_number must be greater than zero")
 	}
+	// guardian_confirmed is validated by controller for K movies; here we only keep the field.
 	if t.Quantity <= 0 {
 		return errors.New("quantity must be greater than zero")
 	}

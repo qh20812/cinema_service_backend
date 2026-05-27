@@ -2,6 +2,7 @@ package ticket
 
 import (
 	"net/http"
+	"time"
 
 	"main/src/auth"
 	"main/src/movie"
@@ -22,8 +23,9 @@ func NewController(repo *Repository, movieRepo *movie.Repository, userRepo *user
 }
 
 type CreateTicketInput struct {
-	MovieID    string `json:"movie_id" binding:"required"`
-	SeatNumber int    `json:"seat_number" binding:"required,gt=0"`
+	MovieID           string `json:"movie_id" binding:"required"`
+	SeatNumber        int    `json:"seat_number" binding:"required,gt=0"`
+	GuardianConfirmed bool   `json:"guardian_confirmed"`
 }
 
 func (ctrl *Controller) Create(c *gin.Context) {
@@ -80,6 +82,11 @@ func (ctrl *Controller) Create(c *gin.Context) {
 		return
 	}
 
+	if !mv.Showtime.After(time.Now().UTC()) {
+		c.JSON(http.StatusConflict, gin.H{"error": "Suất chiếu đã qua"})
+		return
+	}
+
 	if existing, err := ctrl.Repo.FindByMovieAndSeat(movieID, input.SeatNumber); err == nil && existing != nil {
 		c.JSON(http.StatusConflict, gin.H{"error": "Ghế đã được đặt"})
 		return
@@ -89,7 +96,10 @@ func (ctrl *Controller) Create(c *gin.Context) {
 	case movie.AgeRatingP:
 		// no limit
 	case movie.AgeRatingK:
-		// dưới 13 cần giám hộ, hệ thống không kiểm tra được, nên cho phép
+		if !input.GuardianConfirmed {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Phim loại K cần xác nhận người giám hộ"})
+			return
+		}
 	case movie.AgeRatingT13:
 		if age < 13 {
 			c.JSON(http.StatusForbidden, gin.H{"error": "Cấm khán giả dưới 13 tuổi"})
@@ -116,11 +126,12 @@ func (ctrl *Controller) Create(c *gin.Context) {
 	}
 
 	ticket := Ticket{
-		UserID:     userID,
-		MovieID:    movieID,
-		SeatNumber: input.SeatNumber,
-		Quantity:   1,
-		AgeRating:  string(mv.AgeRating),
+		UserID:            userID,
+		MovieID:           movieID,
+		SeatNumber:        input.SeatNumber,
+		GuardianConfirmed: input.GuardianConfirmed,
+		Quantity:          1,
+		AgeRating:         string(mv.AgeRating),
 	}
 
 	if err := ctrl.Repo.Create(&ticket); err != nil {

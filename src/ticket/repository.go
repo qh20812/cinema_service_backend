@@ -75,6 +75,10 @@ func (r *Repository) FindByMovieID(movieID bson.ObjectID) ([]Ticket, error) {
 	return tickets, nil
 }
 
+func (r *Repository) CountByMovieID(movieID bson.ObjectID) (int64, error) {
+	return r.Collection.CountDocuments(context.TODO(), bson.M{"movie_id": movieID})
+}
+
 func (r *Repository) FindByMovieAndSeat(movieID bson.ObjectID, seatNumber int) (*Ticket, error) {
 	var t Ticket
 	err := r.Collection.FindOne(context.TODO(), bson.M{"movie_id": movieID, "seat_number": seatNumber}).Decode(&t)

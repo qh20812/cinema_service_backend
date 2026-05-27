@@ -18,13 +18,13 @@ func main() {
 	_ = db
 
 	r := gin.Default()
-
+	ticketRepo := ticket.NewRepository(db)
 	userRepo := user.NewRepository(db)
 	userCtrl := user.NewController(userRepo)
 	authCtrl := auth.NewController(userRepo)
 	movieRepo := movie.NewRepository(db)
-	movieCtrl := movie.NewController(movieRepo, userRepo)
-	ticketRepo := ticket.NewRepository(db)
+	movieCtrl := movie.NewController(movieRepo, userRepo, ticketRepo)
+
 	ticketCtrl := ticket.NewController(ticketRepo, movieRepo, userRepo)
 
 	port := common.GetEnv("PORT")
@@ -45,6 +45,8 @@ func main() {
 	customer := r.Group("/api")
 	customer.Use(auth.JWTMiddleware(), auth.CustomerMiddleware(userRepo))
 	{
+		customer.GET("/customer/movies", movieCtrl.GetCustomerMovies)
+		customer.GET("/customer/movies/:id", movieCtrl.GetByID)
 		customer.POST("/tickets", ticketCtrl.Create)
 		customer.GET("/tickets", ticketCtrl.GetByUser)
 	}
